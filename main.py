@@ -3,6 +3,7 @@ import numpy as np
 import torch
 import torch.optim as optim
 import torch.utils.data as data
+from tqdm import tqdm
 
 from model import *
 from metric import accuracy
@@ -70,12 +71,11 @@ def train():
 	for epoch in range(args.start_epoch, args.num_epochs):
 		train_loss = 0
 		train_acc  = 0
-		scheduler.step()
 		model.train()
-		for i, x in enumerate(train_loader):
+		for i, x in tqdm(enumerate(train_loader)):
 			logit = model(x[0].float())
-			target = train_label[i]
-
+			target = train_label[i].to(torch.int64)
+			
 			loss = criterion(logit, target.view(1))
 
 			model.zero_grad()
@@ -84,18 +84,19 @@ def train():
 
 			train_loss += loss.item()
 			train_acc  += accuracy(logit, target.view(1))
-
-		print('[epoch',epoch+1,'] Train loss:',train_loss/i, 'Train Acc:',train_acc/i)
+		
+		scheduler.step()
+		print('[epoch',epoch+1,'] Train loss:',train_loss/(i+1), 'Train Acc:',train_acc/(i+1))
 
 		if (epoch+1) % args.val_step == 0:
 			model.eval()
 			val_loss = 0
 			val_acc  = 0
 			with torch.no_grad():
-				for i, x in enumerate(valid_loader):
+				for i, x in tqdm(enumerate(valid_loader)):
 					logit = model(x[0].float())
-					target = valid_label[i]
-
+					target = valid_label[i].to(torch.int64)
+			
 					val_loss += criterion(logit, target.view(1)).item()
 					val_acc += accuracy(logit, target.view(1))
 
@@ -103,12 +104,15 @@ def train():
 					best_epoch = epoch+1
 					best_acc = (val_acc/i)
 					torch.save(model.state_dict(), os.path.join(args.model_path, 'model-%d.pkl'%(best_epoch)))
-
-			print('Val loss:',val_loss/i, 'Val Acc:',val_acc/i)
+					print(f"save model-{best_epoch}.pkl")
+			print('Val loss:',val_loss/(i+1), 'Val Acc:',val_acc/(i+1))
 
 def test():
 	global best_epoch
-
+	best_epoch = 10
+	model = GGCN(A, train_tensor.size(3), args.num_classes, 
+			 [train_tensor.size(3), train_tensor.size(3)*3], [train_tensor.size(3)*3, 16, 32, 64], 
+			 args.feat_dims, args.dropout_rate)
 	model.load_state_dict(torch.load(os.path.join(args.model_path, 
 												  'model-%d.pkl'%(best_epoch))))
 	print("load model from 'model-%d.pkl'"%(best_epoch))
@@ -117,15 +121,15 @@ def test():
 	test_loss = 0
 	test_acc  = 0
 	with torch.no_grad():
-		for i, x in enumerate(test_loader):
+		for i, x in tqdm(enumerate(test_loader)):
 			logit = model(x[0].float())
 			#print(F.softmax(logit, 1).cpu().numpy(), torch.max(logit, 1)[1].float().cpu().numpy())
-			target = test_label[i]
+			target = test_label[i].to(torch.int64)
 
 			test_loss += criterion(logit, target.view(1)).item()
 			test_acc  += accuracy(logit, target.view(1))
 
-	print('Test loss:',test_loss/i, 'Test Acc:',test_acc/i)
+	print('Test loss:',test_loss/(i+1), 'Test Acc:',test_acc/(i+1))
 
 if __name__ == '__main__':
 	if args.mode == 'train':
@@ -134,3 +138,7 @@ if __name__ == '__main__':
 		best_epoch = args.test_epoch
 	test()
 
+# python main.py --data_path dataset\ntu_rgb --mode test --model_path models/ntu --test_epoch 68 --num_classes 120
+
+# python main.py --data_path .\dataset\Florence_3d_actions --num_classes 9 --num_epoch 10
+# 
