@@ -9,7 +9,7 @@ from layer import GraphConvolution, StandConvolution
 class GGCN(nn.Module):
 	def __init__(self, adj, num_v, num_classes, gc_dims, sc_dims, feat_dims, dropout=0.5):
 		super(GGCN, self).__init__()
-
+		torch.manual_seed(0)
 		terminal_cnt = 5
 		actor_cnt = 1
 		adj = adj + torch.eye(adj.size(0)).to(adj).detach()
