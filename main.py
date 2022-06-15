@@ -5,9 +5,10 @@ import torch.optim as optim
 import torch.utils.data as data
 from tqdm import tqdm
 
-from model import *
-from metric import accuracy
-from config import get_args
+from stgcn.model import *
+from stgcn.metric import accuracy
+from stgcn.config import get_args
+
 args = get_args()
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
@@ -109,7 +110,6 @@ def train():
 
 def test():
 	global best_epoch
-	best_epoch = 10
 	model = GGCN(A, train_tensor.size(3), args.num_classes, 
 			 [train_tensor.size(3), train_tensor.size(3)*3], [train_tensor.size(3)*3, 16, 32, 64], 
 			 args.feat_dims, args.dropout_rate)
