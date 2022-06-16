@@ -13,7 +13,9 @@ np.random.seed(1234)
 
 n_max = None
 
-data_path = 'E:/dataset/ntu-rgb\skeletons/nturgbd_skeletons_s001_to_s017_npy'
+data_path1 = '/workspace/dataset/ntu-rgbd/skeletons/nturgbd_skeletons_s001_to_s017_npy'
+data_path2 = '/workspace/dataset/ntu-rgbd/skeletons/nturgbd_skeletons_s018_to_s032_npy'
+
 if n_max is not None:
 	train_file = f'./dataset/ntu_rgb{n_max}/train.pkl'
 	valid_file = f'./dataset/ntu_rgb{n_max}/valid.pkl'
@@ -23,7 +25,13 @@ else:
 	valid_file = f'./dataset/ntu_rgb/valid.pkl'
 	test_file = f'./dataset/ntu_rgb/test.pkl'
 
-data_path = Path(data_path)
+os.makedirs(os.path.dirname(train_file), exist_ok=True)
+os.makedirs(os.path.dirname(valid_file), exist_ok=True)
+os.makedirs(os.path.dirname(test_file), exist_ok=True)
+
+data_path1 = Path(data_path1)
+data_path2 = Path(data_path2)
+
 x_labels = []
 y_labels = []
 train = []
@@ -41,17 +49,20 @@ def ntu_to_florence(ntu_frames: np.ndarray):
 		florance_frames[:,fid,:] = ntu_frames[:,nid,:]
 	return florance_frames
 
-count = 0
+listdir1 =  os.listdir(data_path1) 
+listdir2 =  os.listdir(data_path2) 
 
-for npy_filename in tqdm(os.listdir(data_path)):
-	count += 1
-	if n_max is not None and count == n_max:
+for i, npy_filename in tqdm(enumerate(listdir1 + listdir2)):
+	if n_max is not None and i == n_max:
 		break
 	if not npy_filename.endswith(".npy"):
 		print(f"[WARNING] Except file (not npy file): {npy_filename}")
 		continue
-	data = np.load(data_path / npy_filename, allow_pickle=True).item()
-
+	if i < len(listdir1):
+		data = np.load(data_path1 / npy_filename, allow_pickle=True).item()
+	else:
+		data = np.load(data_path2 / npy_filename, allow_pickle=True).item()
+		
 	if not np.all(np.array(data['nbodys']) == 1):
 		#print(f"[WARNING] Except file (nbody is not 1): {npy_filename}")
 		continue
@@ -60,11 +71,12 @@ for npy_filename in tqdm(os.listdir(data_path)):
 		print(f"[WARNING] Except file (length of frames({len(frames)}) < 32): {npy_filename}")
 		continue
 
+	# TODO: Use all frame not only 32 frames
 	indices = sorted(np.random.choice(len(frames), size=32, replace=False))
 	frames = frames[indices]
 	label = int(data['file_name'][-3:])
-	if label > 60:
-		print(f"[WARNING] Except file (label number ({label}) > 60): {npy_filename}")
+	if label > 120:
+		print(f"[WARNING] Except file (label number ({label}) > 120): {npy_filename}")
 		continue
 	
 	assert frames.shape == (32, 25, 3)
