@@ -4,7 +4,7 @@ from typing import Dict, List
 import numpy as np
 
 class TripletQueue():
-    def __init__(self, num_classes = 61):
+    def __init__(self, num_classes = 121):
         self.queue: Dict[List] = {}
         self.values = [[] for _ in range(num_classes)]
         self.size = [0 for _ in range(num_classes)]
