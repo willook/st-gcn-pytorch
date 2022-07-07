@@ -94,7 +94,7 @@ class AutoEncoderGGCN(GGCN):
 
 		nn.init.xavier_normal_(self.terminal)
 
-	def forward(self, x, test=False):
+	def forward(self, x):
 		head_la = F.interpolate(torch.stack([self.terminal[0],self.terminal[1]],2), 6)
 		head_ra = F.interpolate(torch.stack([self.terminal[0],self.terminal[2]],2), 6)
 		lw_ra = F.interpolate(torch.stack([self.terminal[3],self.terminal[4]],2), 6)

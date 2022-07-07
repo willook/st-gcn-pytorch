@@ -25,13 +25,12 @@ if args.use_2d:
 	train_tensor = train_tensor[:,:,:,:2]
 	valid_tensor = valid_tensor[:,:,:,:2]
 	test_tensor = test_tensor[:,:,:,:2]
-	
 train_loader = data.DataLoader(data.TensorDataset(train_tensor.to(device)),
-							   batch_size = args.batch_size, shuffle=True)
+							   batch_size = args.batch_size, shuffle=True, drop_last=True)
 valid_loader = data.DataLoader(data.TensorDataset(valid_tensor.to(device)),
-							   batch_size = args.batch_size, shuffle=False)
+							   batch_size = args.batch_size, shuffle=False, drop_last=True)
 test_loader  = data.DataLoader(data.TensorDataset(test_tensor.to(device)),
-							   batch_size = args.batch_size, shuffle=False)
+							   batch_size = args.batch_size, shuffle=False, drop_last=True)
 train_label = train_label.to(device)
 valid_label = valid_label.to(device)
 test_label  = test_label.to(device)
@@ -80,8 +79,8 @@ scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=20, gamma = 0.1)
 best_epoch = 0
 best_loss = 100
 
-def train_triplet_recons_loss(model, x0, x1, x2, test=False):
-	x0_recons, embedding0 = model.forward(x0, test = test)
+def train_triplet_recons_loss(model, x0, x1, x2):
+	x0_recons, embedding0 = model.forward(x0)
 	x1_recons, embedding1 = model.forward(x1)
 	x2_recons, embedding2 = model.forward(x2)
 	triplet_loss = triplet_criterion(embedding0, embedding1, embedding2)
@@ -239,7 +238,7 @@ def test():
 			x2 = x2.float()
 			
 			if triplet and recons:
-				loss, triplet_loss, recons_loss = train_triplet_recons_loss(model, x0, x1, x2, test=True)
+				loss, triplet_loss, recons_loss = train_triplet_recons_loss(model, x0, x1, x2)
 				losses['triplet'] += triplet_loss.item()
 				losses['recons'] += recons_loss.item()
 			elif triplet:
